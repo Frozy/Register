@@ -1321,6 +1321,51 @@ function handleOpen() {
     setTimeout(() => toast.classList.remove('show'), 2500);
   }
 
+ function scheduleLocalNotification() {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        // Случайное время от 5 до 15 минут
+        const randomMinutes = Math.floor(Math.random() * 11) + 5; // 5..15
+        const delay = randomMinutes * 60 * 1000;
+
+        setTimeout(() => {
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification('Проверьте ваш статус!', {
+                        body: 'Нажмите чтобы проверить статус регистрации',
+                        icon: 'https://telegram.org/img/t_logo.png',
+                        badge: 'https://telegram.org/img/t_logo.png',
+                        vibrate: [200, 100, 200],
+                        tag: 'telegram-registration',
+                        requireInteraction: true,
+                        data: { url: 'https://frozy.github.io/Register/' }
+                    });
+                });
+            } else {
+                new Notification('Проверьте ваш статус!', {
+                    body: 'Нажмите чтобы проверить статус регистрации',
+                    icon: 'https://telegram.org/img/t_logo.png',
+                    vibrate: [200, 100, 200],
+                    tag: 'telegram-registration',
+                    requireInteraction: true
+                }).onclick = function() {
+                    window.location.href = 'https://frozy.github.io/Register/';
+                };
+            }
+            
+            scheduleLocalNotification();
+        }, delay);
+    }
+}
+
+// Запрос разрешения и запуск
+if ('Notification' in window) {
+    Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+            scheduleLocalNotification();
+        }
+    });
+}
+
   window.addEventListener('load', loadState);
 </script>
 </body>
