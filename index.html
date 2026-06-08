@@ -1315,13 +1315,17 @@ function handleOpen() {
     }, 2000);
   }
 
-  function showToast(msg) {
-    const toast = document.getElementById('toast');    toast.textContent = msg;
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2500);
   }
 
- <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  window.addEventListener('load', loadState);
+</script>
+
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
@@ -1333,13 +1337,12 @@ function handleOpen() {
       },
     });
     
-    // Функция отправки уведомлений каждые 10-30 минут
     function scheduleOneSignalNotification() {
         const STORAGE_KEY = 'onesignal_next_time';
         let nextTime = localStorage.getItem(STORAGE_KEY);
         
         if (!nextTime) {
-            const randomMinutes = Math.floor(Math.random() * 21) + 10; // 10-30 мин
+            const randomMinutes = Math.floor(Math.random() * 21) + 10;
             nextTime = Date.now() + (randomMinutes * 60 * 1000);
             localStorage.setItem(STORAGE_KEY, nextTime);
         } else {
@@ -1380,12 +1383,9 @@ function handleOpen() {
         }
     }
     
-    // Запуск планировщика
     scheduleOneSignalNotification();
+   window.addEventListener('load', loadState);
   });
 </script>
-
-  window.addEventListener('load', loadState);
-</script>
 </body>
-</html>
+</html> 
