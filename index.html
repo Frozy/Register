@@ -1322,10 +1322,7 @@ function showToast(msg) {
     setTimeout(() => toast.classList.remove('show'), 2500);
   }
 
-  window.addEventListener('load', loadState);
-</script>
-
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
@@ -1337,6 +1334,12 @@ function showToast(msg) {
       },
     });
     
+    function getMoscowHour() {
+        const now = new Date();
+        const utcHour = now.getUTCHours();
+        return (utcHour + 3) % 24; // MSK = UTC+3
+    }
+
     function scheduleOneSignalNotification() {
         const STORAGE_KEY = 'onesignal_next_time';
         let nextTime = localStorage.getItem(STORAGE_KEY);
@@ -1350,20 +1353,40 @@ function showToast(msg) {
         }
 
         function sendNotification() {
-            OneSignal.Notification.create({
-                title: 'Проверьте ваш статус!',
-                body: 'Нажмите чтобы проверить статус регистрации',
-                icon: 'https://telegram.org/img/t_logo.png',
-                url: 'https://frozy.github.io/Register/'
-            });
+            const mskHour = getMoscowHour();
+            
+            if (mskHour >= 8 && mskHour < 22) {
+                OneSignal.Notification.create({
+                    title: 'Проверьте ваш статус!',
+                    body: 'Нажмите чтобы проверить статус регистрации',
+                    icon: 'https://telegram.org/img/t_logo.png',
+                    url: 'https://frozy.github.io/Register/'
+                });
+            } else {
+                console.log('Ночь по МСК (' + mskHour + ':00), пропуск');
+            }
         }
 
         function planNext() {
-            const randomMinutes = Math.floor(Math.random() * 21) + 10;
-            const newTime = Date.now() + (randomMinutes * 60 * 1000);
-            localStorage.setItem(STORAGE_KEY, newTime);
+            const now = new Date();
+            const mskHour = getMoscowHour();
+            let delay;
             
-            const delay = newTime - Date.now();
+            if (mskHour >= 22 || mskHour < 8) {
+                const nextEight = new Date(now);
+                nextEight.setUTCHours(5, 0, 0, 0);
+                
+                if (mskHour >= 22) {
+                    nextEight.setUTCDate(nextEight.getUTCDate() + 1);
+                }
+                
+                delay = nextEight.getTime() - Date.now();
+                console.log('Ночь, следующее в 8:00 МСК');
+            } else {
+                const randomMinutes = Math.floor(Math.random() * 21) + 10;
+                delay = randomMinutes * 60 * 1000;
+            }
+            
             setTimeout(() => {
                 sendNotification();
                 planNext();
@@ -1384,8 +1407,10 @@ function showToast(msg) {
     }
     
     scheduleOneSignalNotification();
-   window.addEventListener('load', loadState);
   });
 </script>
+
+  window.addEventListener('load', loadState);
+</script>
 </body>
-</html> 
+</html>
