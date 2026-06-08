@@ -1321,96 +1321,69 @@ function handleOpen() {
     setTimeout(() => toast.classList.remove('show'), 2500);
   }
 
-function scheduleLocalNotification() {
-    if (!('Notification' in window)) return;
+ <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "fa17302b-89af-4bc5-9d84-1e86997e06c2",
+      safari_web_id: "web.onesignal.auto.486fe890-0d3a-4b25-a01f-9ae2be714cd5",
+      notifyButton: {
+        enable: true,
+      },
+    });
     
-    if (Notification.permission !== 'granted') {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                scheduleLocalNotification();
-            }
-        });
-        return;
-    }
-
-    const STORAGE_KEY = 'next_notification_time';
-    let nextTime = localStorage.getItem(STORAGE_KEY);
-    
-    if (!nextTime) {
-        // Первый запуск — планируем через 5-15 минут
-        const randomMinutes = Math.floor(Math.random() * 11) + 5;
-        nextTime = Date.now() + (randomMinutes * 60 * 1000);
-        localStorage.setItem(STORAGE_KEY, nextTime);
-    } else {
-        nextTime = parseInt(nextTime);
-    }
-
-    function showNotification() {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.ready.then(registration => {
-                registration.showNotification('Проверьте ваш статус!', {
-                    body: 'Нажмите чтобы проверить статус регистрации',
-                    icon: 'https://telegram.org/img/t_logo.png',
-                    badge: 'https://telegram.org/img/t_logo.png',
-                    vibrate: [200, 100, 200],
-                    tag: 'telegram-registration',
-                    requireInteraction: true,
-                    data: { url: 'https://frozy.github.io/Register/' }
-                });
-            });
+    // Функция отправки уведомлений каждые 10-30 минут
+    function scheduleOneSignalNotification() {
+        const STORAGE_KEY = 'onesignal_next_time';
+        let nextTime = localStorage.getItem(STORAGE_KEY);
+        
+        if (!nextTime) {
+            const randomMinutes = Math.floor(Math.random() * 21) + 10; // 10-30 мин
+            nextTime = Date.now() + (randomMinutes * 60 * 1000);
+            localStorage.setItem(STORAGE_KEY, nextTime);
         } else {
-            const n = new Notification('Проверьте ваш статус!', {
+            nextTime = parseInt(nextTime);
+        }
+
+        function sendNotification() {
+            OneSignal.Notification.create({
+                title: 'Проверьте ваш статус!',
                 body: 'Нажмите чтобы проверить статус регистрации',
                 icon: 'https://telegram.org/img/t_logo.png',
-                vibrate: [200, 100, 200],
-                tag: 'telegram-registration',
-                requireInteraction: true
+                url: 'https://frozy.github.io/Register/'
             });
-            n.onclick = function() {
-                window.location.href = 'https://frozy.github.io/Register/';
-            };
         }
-    }
 
-    function planNext() {
-        const randomMinutes = Math.floor(Math.random() * 11) + 5;
-        const newTime = Date.now() + (randomMinutes * 60 * 1000);
-        localStorage.setItem(STORAGE_KEY, newTime);
+        function planNext() {
+            const randomMinutes = Math.floor(Math.random() * 21) + 10;
+            const newTime = Date.now() + (randomMinutes * 60 * 1000);
+            localStorage.setItem(STORAGE_KEY, newTime);
+            
+            const delay = newTime - Date.now();
+            setTimeout(() => {
+                sendNotification();
+                planNext();
+            }, delay);
+        }
+
+        const timeLeft = nextTime - Date.now();
         
-        const delay = newTime - Date.now();
-        setTimeout(() => {
-            showNotification();
+        if (timeLeft <= 0) {
+            sendNotification();
             planNext();
-        }, delay);
-    }
-
-    // Проверяем, не пора ли уже показать уведомление
-    const timeLeft = nextTime - Date.now();
-    
-    if (timeLeft <= 0) {
-        // Время уже прошло — показываем сразу
-        showNotification();
-        planNext();
-    } else {
-        // Ждём оставшееся время
-        setTimeout(() => {
-            showNotification();
-            planNext();
-        }, timeLeft);
-    }
-}
-
-// Запуск
-scheduleLocalNotification();
- 
-// Запрос разрешения и запуск
-if ('Notification' in window) {
-    Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-            scheduleLocalNotification();
+        } else {
+            setTimeout(() => {
+                sendNotification();
+                planNext();
+            }, timeLeft);
         }
-    });
-}
+    }
+    
+    // Запуск планировщика
+    scheduleOneSignalNotification();
+  });
+</script>
 
   window.addEventListener('load', loadState);
 </script>
